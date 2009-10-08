@@ -196,6 +196,7 @@ deleting the property.
     $tppe->set( 'attr_prefix' );  # deletes the property attr_prefix
     $tppe->set( 'attr_prefix' => '-' );       # sets the value of attr_prefix
     $tppe->set( 'text_node_key' => '#text' ); # sets the value of text_node_key
+
 =cut
 
 sub set(@) {
