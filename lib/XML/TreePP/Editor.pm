@@ -15,8 +15,8 @@ To use stand-alone:
     my $tpp = XML::TreePP->new();
     my $tree = $tpp->parse('file.xml');
     my $tppe = new XML::TreePP::Editor();
-    $tppe->replace( $tree, '/path[2]/element[2]/edit', { '-myattribute' => "new value" } );
-    $tppe->insert( $tree, '.', { <new node> } );
+    $tppe->replace( $tree, '/path[2]/element[2]/node', '-myattribute' => "new value" );
+    $tppe->insert( $tree, '.', %{<new_root_node>} );
 
 =head1 DESCRIPTION
 
@@ -336,9 +336,15 @@ sub debug {
 
 =pod
 
-=head2 modify( XMLTree, XMLPath, %OPTIONS )
+=head2 modify
 
-insert, replace, delete, mergeadd, mergereplace, mergedelete, mergeappend
+modify( XMLTree, XMLPath, %OPTIONS )
+
+where %options = ( action => %value )
+
+and action is one of ( insert, replace, delete, mergeadd, mergereplace, mergedelete, mergeappend )
+
+and %value is a XML Node Hash, either a partial node or full node
 
 =over 4
 
@@ -381,10 +387,12 @@ appending the values of text elements
 Example:
 
     my $xmltree => { path => { to => { node => "Brown bears" } } };
-    $tppe->modify( $xmltree, '/path/to/node/#text', { mergeappend => { '#text' => "with blue shoes." } } )
+    $tppe->modify( $xmltree, '/path/to/node', mergeappend => { '#text' => " with blue shoes." } )
+    # or: $tppe->modify( $xmltree, '/path/to/node/#text', mergeappend => { '#text' => " with blue shoes." } )
+    # or: $tppe->modify( $xmltree, '/path/to/node/#text', mergeappend => " with blue shoes." )
     print $xmltree->{'path'}->{'to'}->{'node'};
 
-Result:
+    output:
 
     Brown bears with blue shoes.
 
@@ -798,8 +806,8 @@ sub modify (@) {
                 }
                 $parentnode->{$childname} = $newchildnode
             } elsif (ref($parentnode->{$childname}) eq "ARRAY") {
-                $result = @{$parentnode->{$childname}};
-                if (($childpos >= 1) && ($childpos <= $result)) {
+                my $size = @{$parentnode->{$childname}};
+                if (($childpos >= 1) && ($childpos <= $size)) {
                     splice(@{$parentnode->{$childname}},($childpos - 1), 0, @{$newchildnode});
                     $result += @{$newchildnode};
                 } else {
@@ -1064,15 +1072,22 @@ sub modify (@) {
         return $numAffected;
     };
 
-    pp (\%options);
+    #pp (\%options);
     my $resultmaps = $self->tppx->filterXMLDoc($xtree, $xmlpath, structure => "ParentMAP");
-    pp ({ xmldoc => $xtree, xmlpath => $xmlpath, options => \%options, map => $resultmaps });
+    #pp ({ xmldoc => $xtree, xmlpath => $xmlpath, options => \%options, map => $resultmaps });
     foreach my $parentmap (@{$resultmaps}) {
-        foreach my $child (@{$parentmap->{'child'}}) {
-            foreach my $action (keys %options) {
-                my $value = $options{$action} || undef;
+        foreach my $action (keys %options) {
+            my $value = $options{$action} || undef;
+            if ($action eq "insert") {
+                my $child = $parentmap->{'child'}->[(@{$parentmap->{'child'}} - 1)];
                 my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
                 $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$value);
+                next;
+            }
+            foreach my $child (@{$parentmap->{'child'}}) {
+                my $tmp_value = eval(pp($value));
+                my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
+                $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$tmp_value);
             }
         }
     }
@@ -1097,7 +1112,9 @@ sub modify (@) {
 
 =pod
 
-=head2 insert( XMLTree, XMLPath, $value )
+=head2 insert
+
+insert( XMLTree, XMLPath, $value )
 
 This is the same as modify( XMLTree, XMLPath, { insert => $value } )
 
@@ -1107,15 +1124,17 @@ sub insert (@) {
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { insert => $value } ) if defined $self;
-    return modify( $xtree, $path, { insert => $value } );
+    return $self->modify( $xtree, $path, insert => $value ) if defined $self;
+    return modify( $xtree, $path, insert => $value );
 }
 
 =pod
 
-=head2 mergeadd( XMLTree, XMLPath, $value )
+=head2 mergeadd
 
-This is the same as modify( XMLTree, XMLPath, { mergeadd => $value } )
+mergeadd( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, mergeadd => $value )
 
 =cut
 sub mergeadd (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
@@ -1123,15 +1142,17 @@ sub mergeadd (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { mergeadd => $value } ) if defined $self;
-    return modify( $xtree, $path, { mergeadd => $value } );
+    return $self->modify( $xtree, $path, mergeadd => $value ) if defined $self;
+    return modify( $xtree, $path, mergeadd => $value );
 }
 
 =pod
 
-=head2 mergereplace( XMLTree, XMLPath, $value )
+=head2 mergereplace
 
-This is the same as modify( XMLTree, XMLPath, { mergereplace => $value } )
+mergereplace( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, mergereplace => $value )
 
 =cut
 sub mergereplace (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
@@ -1139,15 +1160,17 @@ sub mergereplace (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { mergereplace => $value } ) if defined $self;
-    return modify( $xtree, $path, { mergereplace => $value } );
+    return $self->modify( $xtree, $path, mergereplace => $value ) if defined $self;
+    return modify( $xtree, $path, mergereplace => $value );
 }
 
 =pod
 
-=head2 mergeappend( XMLTree, XMLPath, $value )
+=head2 mergeappend
 
-This is the same as modify( XMLTree, XMLPath, { mergeappend => $value } )
+mergeappend( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, mergeappend => $value )
 
 =cut
 sub mergeappend (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
@@ -1155,15 +1178,17 @@ sub mergeappend (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { mergeappend => $value } ) if defined $self;
-    return modify( $xtree, $path, { mergeappend => $value } );
+    return $self->modify( $xtree, $path, mergeappend => $value ) if defined $self;
+    return modify( $xtree, $path, mergeappend => $value );
 }
 
 =pod
 
-=head2 mergedelete( XMLTree, XMLPath, $value )
+=head2 mergedelete
 
-This is the same as modify( XMLTree, XMLPath, { mergedelete => $value } )
+mergedelete( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, mergedelete => $value )
 
 =cut
 sub mergedelete (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
@@ -1171,15 +1196,17 @@ sub mergedelete (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { mergedelete => $value } ) if defined $self;
-    return modify( $xtree, $path, { mergedelete => $value } );
+    return $self->modify( $xtree, $path, mergedelete => $value ) if defined $self;
+    return modify( $xtree, $path, mergedelete => $value );
 }
 
 =pod
 
-=head2 replace( XMLTree, XMLPath, $value )
+=head2 replace
 
-This is the same as modify( XMLTree, XMLPath, { replace => $value } )
+replace( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, replace => $value )
 
 =cut
 sub replace (@) {
@@ -1187,23 +1214,25 @@ sub replace (@) {
     my $xtree   = shift;
     my $path    = shift;
     my $value   = shift;
-    return $self->modify( $xtree, $path, { replace => $value } ) if defined $self;
-    return modify( $xtree, $path, { replace => $value } );
+    return $self->modify( $xtree, $path, replace => $value ) if defined $self;
+    return modify( $xtree, $path, replace => $value );
 }
 
 =pod
 
-=head2 delete( XMLTree, XMLPath, $value )
+=head2 delete
 
-This is the same as modify( XMLTree, XMLPath, { delete => undef } )
+delete( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, delete => undef )
 
 =cut
 sub delete (@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
     my $path    = shift;
-    return $self->modify( $xtree, $path, { delete => undef } ) if defined $self;
-    return modify( $xtree, $path, { delete => undef } );
+    return $self->modify( $xtree, $path, delete => undef ) if defined $self;
+    return modify( $xtree, $path, delete => undef );
 }
 
 
@@ -1211,6 +1240,93 @@ sub delete (@) {
 __END__
 
 =pod
+
+=head1 EXAMPLES
+
+    #!/usr/bin/perl
+    use XML::TreePP;
+    use XML::TreePP::XMLPath;
+    use XML::TreePP::Editor;
+    
+    # Parse the XML docuemnt.
+    my $tpp  = new XML::TreePP;
+    my $tppx = new XML::TreePP::XMLPath;
+    my $tppe = new XML::TreePP::Editor;
+    
+    $tpp->set( indent => 4 );
+    
+    my $xmldoc = $tpp->parse(<<XMLEND
+        <paragraph>
+            <sentence language="german">
+                <words>Do red cats eat yellow food</words>
+                <punctuation>?</punctuation>
+            </sentence>
+            <sentence language="english">
+                <words>Brown cows eat green grass</words>
+                <punctuation>.</punctuation>
+            </sentence>
+        </paragraph>
+    XMLEND
+    );
+        
+    print $tpp->write($xmldoc);
+    print "="x20,"\n";
+    my $sentence_node = { 'words'          => "No, cats eat green food",
+                          '-language'      => "spanish",
+                          'punctuation'    => '!' };
+    $tppe->insert( $xmldoc, '/paragraph/sentence', $sentence_node  );
+    print $tpp->write($xmldoc);
+    print "="x20,"\n";
+    
+    my $wordsnode = { '#text' => "Do cats really eat green food" };
+    $tppe->mergereplace( $xmldoc, '/paragraph/sentence[@language="german"]/words', $wordsnode  );
+    print $tpp->write($xmldoc);
+
+Output:
+
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <paragraph>
+        <sentence language="german">
+            <punctuation>?</punctuation>
+            <words>Do red cats eat yellow food</words>
+        </sentence>
+        <sentence language="english">
+            <punctuation>.</punctuation>
+            <words>Brown cows eat green grass</words>
+        </sentence>
+    </paragraph>
+    ====================
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <paragraph>
+        <sentence language="german">
+            <punctuation>?</punctuation>
+            <words>Do red cats eat yellow food</words>
+        </sentence>
+        <sentence language="spanish">
+            <punctuation>!</punctuation>
+            <words>No, cats eat green food</words>
+        </sentence>
+        <sentence language="english">
+            <punctuation>.</punctuation>
+            <words>Brown cows eat green grass</words>
+        </sentence>
+    </paragraph>
+    ====================
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <paragraph>
+        <sentence language="german">
+            <punctuation>?</punctuation>
+            <words>Do cats really eat green food</words>
+        </sentence>
+        <sentence language="spanish">
+            <punctuation>!</punctuation>
+            <words>No, cats eat green food</words>
+        </sentence>
+        <sentence language="english">
+            <punctuation>.</punctuation>
+            <words>Brown cows eat green grass</words>
+        </sentence>
+    </paragraph>
 
 =head1 AUTHOR
 
