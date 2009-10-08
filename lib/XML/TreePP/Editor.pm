@@ -15,7 +15,7 @@ To use stand-alone:
     my $tpp = XML::TreePP->new();
     my $tree = $tpp->parse('file.xml');
     my $tppe = new XML::TreePP::Editor();
-    $tppe->replace( $tree, '/path[2]/element[2]/node', '-myattribute' => "new value" );
+    $tppe->replace( $tree, '/path[2]/element[2]/node', { '-myattribute' => "new value" } );
     $tppe->insert( $tree, '.', %{<new_root_node>} );
 
 =head1 DESCRIPTION
@@ -362,22 +362,22 @@ The options for modifying the node.
 
 =over 4
 
-=item * insert => C<%node> - insert the new node at XMLPath
+=item * insert => C<\%node> - insert the new node at XMLPath
 
-=item * replace => C<%node> - replace the node at XMLPath with this new node
+=item * replace => C<\%node> - replace the node at XMLPath with this new node
 
 =item * delete => C<undef> - delete the node at the XMLPath
 
-=item * mergeadd => C<%node> - merge this node into the node at XMLPath,
+=item * mergeadd => C<\%node> - merge this node into the node at XMLPath,
 only adding elements and attributes that do not exist
 
-=item * mergereplace => C<%node> - merge this node into the node at XMLPath,
+=item * mergereplace => C<\%node> - merge this node into the node at XMLPath,
 replacing elements and attributes, and adding them if they do not exist
 
-=item * mergedelete => C<%node> - merge this node into the node at XMLPath,
-deleting elements and attributes that exist
+=item * mergedelete => C<\%node> - merge this node into the node at XMLPath,
+deleting elements and attributes that exist in both nodes
 
-=item * mergeappend => C<%node> - merge this node into the node at XMLPath,
+=item * mergeappend => C<\%node> - merge this node into the node at XMLPath,
 appending the values of text elements
 
 =back
@@ -391,9 +391,9 @@ Example:
     # or: $tppe->modify( $xmltree, '/path/to/node/#text', mergeappend => { '#text' => " with blue shoes." } )
     # or: $tppe->modify( $xmltree, '/path/to/node/#text', mergeappend => " with blue shoes." )
     print $xmltree->{'path'}->{'to'}->{'node'};
-
+    
     output:
-
+    
     Brown bears with blue shoes.
 
 =cut
@@ -1079,7 +1079,7 @@ sub modify (@) {
         foreach my $action (keys %options) {
             my $value = $options{$action} || undef;
             if ($action eq "insert") {
-                my $child = $parentmap->{'child'}->[(@{$parentmap->{'child'}} - 1)];
+                my $child = $parentmap->{'child'}->[0];
                 my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
                 $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$value);
                 next;
@@ -1116,7 +1116,7 @@ sub modify (@) {
 
 insert( XMLTree, XMLPath, $value )
 
-This is the same as modify( XMLTree, XMLPath, { insert => $value } )
+This is the same as modify( XMLTree, XMLPath, insert => $value )
 
 =cut
 sub insert (@) {
@@ -1222,7 +1222,7 @@ sub replace (@) {
 
 =head2 delete
 
-delete( XMLTree, XMLPath, $value )
+delete( XMLTree, XMLPath )
 
 This is the same as modify( XMLTree, XMLPath, delete => undef )
 
@@ -1248,7 +1248,7 @@ __END__
     use XML::TreePP::XMLPath;
     use XML::TreePP::Editor;
     
-    # Parse the XML docuemnt.
+    # Parse the XML document.
     my $tpp  = new XML::TreePP;
     my $tppx = new XML::TreePP::XMLPath;
     my $tppe = new XML::TreePP::Editor;
@@ -1271,6 +1271,7 @@ __END__
         
     print $tpp->write($xmldoc);
     print "="x20,"\n";
+    
     my $sentence_node = { 'words'          => "No, cats eat green food",
                           '-language'      => "spanish",
                           'punctuation'    => '!' };
