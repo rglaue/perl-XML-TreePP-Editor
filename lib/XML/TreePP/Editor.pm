@@ -40,14 +40,13 @@ The following perl modules are depended on by this module:
 
 package XML::TreePP::Editor;
 
-use 5.008001;
+use 5.005;
 use warnings;
 use strict;
 use Carp;
 use XML::TreePP;
+#use lib '/home/rglaue/work/perl-modules/XML-TreePP-XMLPath/trunk/lib';
 use XML::TreePP::XMLPath;
-use lib '/home/rglaue/work/perl-modules/XML-TreePP-XMLPath/trunk/lib';
-use XML::TreePP::XMLPath60;
 # use Module::Load;
 use Data::Dump qw(pp);
 
@@ -161,11 +160,11 @@ Or loads a new instance of XML::TreePP::XMLPath and returns it.
 sub tppx(@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     if (!defined $self) {
-        return new XML::TreePP::XMLPath60;
+        return new XML::TreePP::XMLPath;
     } else {
-        return $self->{'tppx'} = shift if @_ >= 1 && ref($_[0]) eq "XML::TreePP::XMLPath60";
-        return $self->{'tppx'} if defined $self->{'tppx'} && ref($self->{'tppx'}) eq "XML::TreePP::XMLPath60";
-        $self->{'tppx'} = new XML::TreePP::XMLPath60;
+        return $self->{'tppx'} = shift if @_ >= 1 && ref($_[0]) eq "XML::TreePP::XMLPath";
+        return $self->{'tppx'} if defined $self->{'tppx'} && ref($self->{'tppx'}) eq "XML::TreePP::XMLPath";
+        $self->{'tppx'} = new XML::TreePP::XMLPath;
         return $self->{'tppx'};
     }
 }

@@ -1,3 +1,4 @@
+use 5.005;
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
@@ -11,9 +12,12 @@ WriteMakefile(
       ? ('LICENSE'=> 'perl')
       : ()),
     PL_FILES            => {},
-    PREREQ_PM => {
-        'Test::More' => 0,
-    },
+    PREREQ_PM           => {
+                             'XML::TreePP' => 0.39,
+                             'XML::TreePP::XMLPath' => 0.60,
+                             'Data::Dump'  => 1.10,
+                             'Test::More' => 0,
+                           },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'XML-TreePP-Editor-*' },
 );
