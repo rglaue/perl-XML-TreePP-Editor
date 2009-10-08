@@ -1,6 +1,6 @@
 =pod
 
-=head 1 NAME
+=head1 NAME
 
 XML::TreePP::Editor - An editor for an XML::TreePP parsed XML document
 
@@ -15,7 +15,7 @@ To use stand-alone:
     my $tpp = XML::TreePP->new();
     my $tree = $tpp->parse('file.xml');
     my $tppe = new XML::TreePP::Editor();
-    $tppe->replace( $tree, '/path[2]/element[2]/edit', '-myattribute' => "new value" );
+    $tppe->replace( $tree, '/path[2]/element[2]/edit', { '-myattribute' => "new value" } );
     $tppe->insert( $tree, '.', { <new node> } );
 
 =head1 DESCRIPTION
@@ -45,9 +45,7 @@ use warnings;
 use strict;
 use Carp;
 use XML::TreePP;
-#use lib '/home/rglaue/work/perl-modules/XML-TreePP-XMLPath/trunk/lib';
-use XML::TreePP::XMLPath;
-# use Module::Load;
+use XML::TreePP::XMLPath 0.60;
 use Data::Dump qw(pp);
 
 BEGIN {
@@ -338,7 +336,7 @@ sub debug {
 
 =pod
 
-=head2 modify
+=head2 modify( XMLTree, XMLPath, %OPTIONS )
 
 insert, replace, delete, mergeadd, mergereplace, mergedelete, mergeappend
 
@@ -352,14 +350,45 @@ The parsed XML Document.
 
 The XML Path to the node, attribute or element to modify
 
-=item * B<value>
+=item * B<options>
 
-The new value to modify the node with.
+The options for modifying the node.
+
+=over 4
+
+=item * insert => C<%node> - insert the new node at XMLPath
+
+=item * replace => C<%node> - replace the node at XMLPath with this new node
+
+=item * delete => C<undef> - delete the node at the XMLPath
+
+=item * mergeadd => C<%node> - merge this node into the node at XMLPath,
+only adding elements and attributes that do not exist
+
+=item * mergereplace => C<%node> - merge this node into the node at XMLPath,
+replacing elements and attributes, and adding them if they do not exist
+
+=item * mergedelete => C<%node> - merge this node into the node at XMLPath,
+deleting elements and attributes that exist
+
+=item * mergeappend => C<%node> - merge this node into the node at XMLPath,
+appending the values of text elements
 
 =back
 
-=cut
+=back
 
+Example:
+
+    my $xmltree => { path => { to => { node => "Brown bears" } } };
+    $tppe->modify( $xmltree, '/path/to/node/#text', { mergeappend => { '#text' => "with blue shoes." } } )
+    print $xmltree->{'path'}->{'to'}->{'node'};
+
+Result:
+
+    Brown bears with blue shoes.
+
+=cut
 
 sub modify (@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
@@ -955,7 +984,7 @@ sub modify (@) {
         return $result;
     };
 
-# This can be the function $mod->($parent_nodes,insert|replace|delete|mergeadd|mergereplace|mergedelete|mergeappend,$child_path,string,$value);
+    # This can be the function $mod->($parent_nodes,insert|replace|delete|mergeadd|mergereplace|mergedelete|mergeappend,$child_path,string,$value);
     my $mod = sub (@) {
         my $parent_nodes    = shift;  # @{$parent_nodes}
         my $action          = shift;  # insert|replace|delete|mergeadd|mergereplace|mergedelete|mergeappend
@@ -1053,29 +1082,26 @@ sub modify (@) {
 }
 
 
-=pod
-=head2 add()
-How do we execute an add() ?
+#How do we execute an add() ?
+#
+#Add will first check to see if xmlpath exists
+#If the path does not exist, then the $value is insert()ed into the xmldoc at the path indicated:
+#  and path is #text - create node if it does not already exist, set #text
+#  and path is @attribute - create node if it does not already exist, set @attribute
+#  and path is node, $value is CDATA - create node if it does not already exist, set #text
+#  and path is node, $value is REF - create the node as $value
+#If the path does exist, then we must asssume the $value is to be merge()d:
+#  and path is #text - FAILURE, #text already exists - use merge to add additional content, or replace to change it
+#  and path is @attribute - FAILURE, attribute already exists - use replace to change it
+#  and path is node - FAILURE, node already exists - use insert to add additional nodes, merge to update this one, replace to change this one
 
-Add will first check to see if xmlpath exists
-If the path does not exist, then the $value is insert()ed into the xmldoc at the path indicated:
-  and path is #text - create node if it does not already exist, set #text
-  and path is @attribute - create node if it does not already exist, set @attribute
-  and path is node, $value is CDATA - create node if it does not already exist, set #text
-  and path is node, $value is REF - create the node as $value
-If the path does exist, then we must asssume the $value is to be merge()d:
-  and path is #text - FAILURE, #text already exists - use merge to add additional content, or replace to change it
-  and path is @attribute - FAILURE, attribute already exists - use replace to change it
-  and path is node - FAILURE, node already exists - use insert to add additional nodes, merge to update this one, replace to change this one
+=pod
+
+=head2 insert( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { insert => $value } )
 
 =cut
-#sub add (@) {
-#    my $self    = shift;
-#    my $xtree   = shift;
-#    my $path    = shift;
-#    my $value   = shift;
-#}
-
 sub insert (@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1085,6 +1111,13 @@ sub insert (@) {
     return modify( $xtree, $path, { insert => $value } );
 }
 
+=pod
+
+=head2 mergeadd( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { mergeadd => $value } )
+
+=cut
 sub mergeadd (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1094,6 +1127,13 @@ sub mergeadd (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     return modify( $xtree, $path, { mergeadd => $value } );
 }
 
+=pod
+
+=head2 mergereplace( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { mergereplace => $value } )
+
+=cut
 sub mergereplace (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1103,6 +1143,13 @@ sub mergereplace (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     return modify( $xtree, $path, { mergereplace => $value } );
 }
 
+=pod
+
+=head2 mergeappend( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { mergeappend => $value } )
+
+=cut
 sub mergeappend (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1112,6 +1159,13 @@ sub mergeappend (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     return modify( $xtree, $path, { mergeappend => $value } );
 }
 
+=pod
+
+=head2 mergedelete( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { mergedelete => $value } )
+
+=cut
 sub mergedelete (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1121,6 +1175,13 @@ sub mergedelete (@) {  # mergeAdd mergeReplace mergeAppend mergeDelete
     return modify( $xtree, $path, { mergedelete => $value } );
 }
 
+=pod
+
+=head2 replace( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { replace => $value } )
+
+=cut
 sub replace (@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1130,6 +1191,13 @@ sub replace (@) {
     return modify( $xtree, $path, { replace => $value } );
 }
 
+=pod
+
+=head2 delete( XMLTree, XMLPath, $value )
+
+This is the same as modify( XMLTree, XMLPath, { delete => undef } )
+
+=cut
 sub delete (@) {
     my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
     my $xtree   = shift;
@@ -1138,7 +1206,31 @@ sub delete (@) {
     return modify( $xtree, $path, { delete => undef } );
 }
 
+
 1;
+__END__
 
+=pod
 
+=head1 AUTHOR
+
+Russell E Glaue, http://russ.glaue.org
+
+=head1 SEE ALSO
+
+C<XML::TreePP>
+
+C<XML::TreePP::XMLPath>
+
+XML::TreePP::Editor on Codepin: http://www.codepin.org/project/perlmod/XML-TreePP-Editor
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 2009 Center for the Application of Information Technologies.
+All rights reserved.
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut
 
