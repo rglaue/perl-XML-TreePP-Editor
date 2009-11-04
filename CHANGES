@@ -1,4 +1,12 @@
 Revision history for XML-TreePP-Editor
 
+0.11    2009-11-04 reg
+        - Added test cases to test all primary functions
+        - Fixed an issue with modify-delete action when deleting multiple
+          nodes, in which it deleted the first node first and caused an issue
+          since this changed the positions on all remaining nodes and there
+          was more nodes scheduled to be deleted.
+          The fix was to delete the last node first, or LIFO instead of FIFO.
+
 0.10    2009-10-08 reg
-        Edit an XML::TreePP parsed XML Document, using XML::TreePP::XMLPath
+        - Edit an XML::TreePP parsed XML Document, using XML::TreePP::XMLPath

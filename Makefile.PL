@@ -14,7 +14,7 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM           => {
                              'XML::TreePP' => 0.39,
-                             'XML::TreePP::XMLPath' => 0.60,
+                             'XML::TreePP::XMLPath' => 0.61,
                              'Data::Dump'  => 1.10,
                              'Test::More' => 0,
                            },

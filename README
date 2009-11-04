@@ -10,12 +10,25 @@ To use stand-alone:
     use strict;
     use XML::TreePP;
     use XML::TreePP::Editor;
-    
+
+    my $xml =<<"XMLEOF";
+    <path>
+        <element>
+            <node myattribute="something">A</node>
+        </element>
+        <element>
+            <node myattribute="anotherthing">B</node>
+        </element>
+    </path>
+    XMLEOF;
+
     my $tpp = XML::TreePP->new();
-    my $tree = $tpp->parse('file.xml');
+    my $tree = $tpp->parse($xml);
     my $tppe = new XML::TreePP::Editor();
-    $tppe->replace( $tree, '/path[2]/element[2]/edit', { '-myattribute' => "new value" } );
-    $tppe->insert( $tree, '.', { <new node> } );
+    # Replace the <node> node of the second <element> node with this
+    $tppe->replace( $tree, '/path/element[2]/node', { '-myattribute' => "new value" } );
+    # Insert this new <element> node to the beginning of the list of <element> nodes 
+    $tppe->insert( $tree, '/path/element', { node => { -myattribute="someval", '#text' => "C" } } );
 
 
 INSTALLATION
@@ -33,7 +46,7 @@ DEPENDENCIES
 This module requires these other modules and libraries:
 
     XML::TreePP
-    XML::TreePP::XMLPath >= 0.60
+    XML::TreePP::XMLPath >= 0.61
     Data::Dump
 
 

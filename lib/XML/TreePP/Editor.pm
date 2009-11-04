@@ -45,7 +45,7 @@ use warnings;
 use strict;
 use Carp;
 use XML::TreePP;
-use XML::TreePP::XMLPath 0.60;
+use XML::TreePP::XMLPath 0.61;
 use Data::Dump qw(pp);
 
 BEGIN {
@@ -58,7 +58,7 @@ BEGIN {
     $REF_NAME   = "XML::TreePP::Editor";  # package name
 
     use vars      qw( $VERSION $DEBUG %PROPERTIES );
-    $VERSION    = '0.10';
+    $VERSION    = '0.11';
     $DEBUG      = 0;
     $PROPERTIES{'TPP'}  = "force_array force_hash cdata_scalar_ref user_agent http_lite lwp_useragent base_class elem_class xml_deref first_out last_out indent xml_decl output_encoding utf8_flag attr_prefix text_node_key ignore_error use_ixhash";
     $PROPERTIES{'TPPX'} = "";
