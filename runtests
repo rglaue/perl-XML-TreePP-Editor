@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
 use lib 'lib';
-use lib '/home/rglaue/work/perl-modules/XML-TreePP-XMLPath/trunk/lib';
 use Test::Harness qw(runtests);
 $Test::Harness::verbose = 1;
 
