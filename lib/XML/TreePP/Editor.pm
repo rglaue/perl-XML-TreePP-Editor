@@ -828,7 +828,7 @@ sub modify (@) {
         my $stringname  = shift; # ref->ref->[#]->name - can be undef  # replace this $stringname of the child node
         my $value       = shift;
         my $result      = 0;
-        pp({ parentnode => $parentnode, childname => $childname, childpos => $childpos, stringname => $stringname, value => $value });
+        # pp({ parentnode => $parentnode, childname => $childname, childpos => $childpos, stringname => $stringname, value => $value });
 
         if (!ref($parentnode)) {
             croak "Cannot replace a child node to a non referencing parent node.";
@@ -873,7 +873,7 @@ sub modify (@) {
                     my $i = 0;
                     if (defined $stringname) {  # Make sure we account for { node => <CDATA> } opposed to { node => { #text => <CDATA> } }
                         while ($i < @{$parentnode->{$childname}}) {
-                            print "-replace array $childname $i\n";
+                            print "-replace array $childname $i\n" if $DEBUG;
                             # Node could just be CDATA (#text) and not HASH
                             if (ref($parentnode->{$childname}->[$i]) eq "HASH") {
                                 $parentnode->{$childname}->[$i]->{$stringname} = $newchildnode->[0]->{$stringname};
@@ -885,7 +885,7 @@ sub modify (@) {
                             $i++;
                         }
                     } else {
-                        print "-replace ALL $childname $i\n";
+                        print "-replace ALL $childname $i\n" if $DEBUG;
                         $parentnode->{$childname} = $newchildnode;
                         $result++;
                     }
@@ -940,7 +940,7 @@ sub modify (@) {
             }
         } elsif (ref($parentnode) eq "HASH") {
             if (ref($parentnode->{$childname}) eq "ARRAY") {
-                if ((defined $childpos) && ($childpos >= 1) && ($childpos <= @{$parentnode->{$childname}})) {
+                if ((defined $childpos) && ($childpos >= 1) && (($childpos - 1) <= @{$parentnode->{$childname}})) {
                     if (defined $stringname) {  # Make sure we account for { node => <CDATA> } opposed to { node => { #text => <CDATA> } }
                         if (ref($parentnode->{$childname}->[($childpos - 1)]) eq "HASH") {
                             delete $parentnode->{$childname}->[($childpos - 1)]->{$stringname};
@@ -972,8 +972,9 @@ sub modify (@) {
                         $result++;
                     }
                 } else {
-                    croak "Cannot delete child node, none exists at position $childpos." if !defined $stringname;
-                    croak "Cannot delete from child node, none exists at position $childpos." if defined $stringname;
+                    my $num = @{$parentnode->{$childname}};
+                    croak "Cannot delete child node $childname at position $childpos when there is $num." if !defined $stringname;
+                    croak "Cannot delete from child node $childname, none exists at position $childpos when there is $num." if defined $stringname;
                     return undef;
                 }
             } else {
@@ -1083,6 +1084,14 @@ sub modify (@) {
                 my $child = $parentmap->{'child'}->[0];
                 my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
                 $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$value);
+                next;
+            }
+            if ($action eq "delete") {
+                foreach my $child (reverse @{$parentmap->{'child'}}) {
+                    my $tmp_value = eval(pp($value));
+                    my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
+                    $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$tmp_value);
+                }
                 next;
             }
             foreach my $child (@{$parentmap->{'child'}}) {
