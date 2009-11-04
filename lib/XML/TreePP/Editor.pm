@@ -16,7 +16,7 @@ To use stand-alone:
     my $tree = $tpp->parse('file.xml');
     my $tppe = new XML::TreePP::Editor();
     $tppe->replace( $tree, '/path[2]/element[2]/node', { '-myattribute' => "new value" } );
-    $tppe->insert( $tree, '.', %{<new_root_node>} );
+    $tppe->insert( $tree, '.', \%{<new_root_node>} );
 
 =head1 DESCRIPTION
 
@@ -30,7 +30,7 @@ The following perl modules are depended on by this module:
 
 =item *     XML::TreePP
 
-=item *     XML::TreePP::XMLPath  >= version 0.60
+=item *     XML::TreePP::XMLPath  >= version 0.61
 
 =back
 
