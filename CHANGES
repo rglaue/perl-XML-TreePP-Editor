@@ -1,6 +1,6 @@
 Revision history for XML-TreePP-Editor
 
-0.11    2011-01-17 reg
+0.12    2011-01-17 reg
         - Replaced the use of the Data::Dump module with Data::Dumper.
           In the latest version of PERL (5.12.2 tested) the eval function does
           not like unquoted HASH keys which begin with the dash "-". Thus, the
