@@ -1357,7 +1357,7 @@ XML::TreePP::Editor on Codepin: http://www.codepin.org/project/perlmod/XML-TreeP
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2009 Center for the Application of Information Technologies.
+Copyright (c) 2009-2011 Russell E Glaue, Center for the Application of Information Technologies.
 All rights reserved.
 
 This program is free software; you can redistribute it and/or modify it under
