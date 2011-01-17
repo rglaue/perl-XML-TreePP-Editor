@@ -28,7 +28,7 @@ To use stand-alone:
     # Replace the <node> node of the second <element> node with this
     $tppe->replace( $tree, '/path/element[2]/node', { '-myattribute' => "new value" } );
     # Insert this new <element> node to the beginning of the list of <element> nodes 
-    $tppe->insert( $tree, '/path/element', { node => { -myattribute="someval", '#text' => "C" } } );
+    $tppe->insert( $tree, '/path/element', { node => { '-myattribute' => "someval", '#text' => "C" } } );
 
 
 INSTALLATION
@@ -57,8 +57,8 @@ SUPPORT AND DOCUMENTATION
 
 COPYRIGHT AND LICENSE
 
-Copyright (c) 2009 Center for the Application of Information Technologies.
-All rights reserved.
+Copyright (c) 2009-2011 Russell E Glaue, Center for the Application of
+Information Technologies. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

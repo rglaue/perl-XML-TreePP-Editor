@@ -46,7 +46,11 @@ use strict;
 use Carp;
 use XML::TreePP;
 use XML::TreePP::XMLPath 0.61;
-use Data::Dump qw(pp);
+#use Data::Dump qw(pp);
+use Data::Dumper;
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
 
 BEGIN {
     use vars      qw(@ISA @EXPORT @EXPORT_OK);
@@ -58,7 +62,7 @@ BEGIN {
     $REF_NAME   = "XML::TreePP::Editor";  # package name
 
     use vars      qw( $VERSION $DEBUG %PROPERTIES );
-    $VERSION    = '0.11';
+    $VERSION    = '0.12';
     $DEBUG      = 0;
     $PROPERTIES{'TPP'}  = "force_array force_hash cdata_scalar_ref user_agent http_lite lwp_useragent base_class elem_class xml_deref first_out last_out indent xml_decl output_encoding utf8_flag attr_prefix text_node_key ignore_error use_ixhash";
     $PROPERTIES{'TPPX'} = "";
@@ -570,7 +574,7 @@ sub modify (@) {
         my $mergenode   = shift;
         my $action      = shift;  # add | append | replace | delete
         my $result      = 0;
-        # pp({ targetnode => $targetnode, mergenode => $mergenode, action => $action });
+        # print Dumper({ targetnode => $targetnode, mergenode => $mergenode, action => $action });
         unless ( (ref($targetnode) eq "HASH") && (ref($mergenode) eq "HASH") && (defined $action) ) {
             return undef;
         }
@@ -828,7 +832,7 @@ sub modify (@) {
         my $stringname  = shift; # ref->ref->[#]->name - can be undef  # replace this $stringname of the child node
         my $value       = shift;
         my $result      = 0;
-        # pp({ parentnode => $parentnode, childname => $childname, childpos => $childpos, stringname => $stringname, value => $value });
+        # print Dumper({ parentnode => $parentnode, childname => $childname, childpos => $childpos, stringname => $stringname, value => $value });
 
         if (!ref($parentnode)) {
             croak "Cannot replace a child node to a non referencing parent node.";
@@ -897,7 +901,7 @@ sub modify (@) {
             } else {
                 if ((!defined $childpos) || ($childpos == 1)) {
                     if (defined $stringname) {  # Make sure we account for { node => <CDATA> } opposed to { node => { #text => <CDATA> } }
-#pp( { parentnode => $parentnode, childname => $childname, stringname => $stringname, newchildname => $newchildnode } );
+# print Dumper( { parentnode => $parentnode, childname => $childname, stringname => $stringname, newchildname => $newchildnode } );
                         if (ref($parentnode->{$childname}) eq "HASH") {
                             $parentnode->{$childname}->{$stringname} = $newchildnode->[0]->{$stringname};
                             $result++;
@@ -1088,14 +1092,14 @@ sub modify (@) {
             }
             if ($action eq "delete") {
                 foreach my $child (reverse @{$parentmap->{'child'}}) {
-                    my $tmp_value = eval(pp($value));
+                    my $tmp_value = eval(Dumper($value));
                     my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
                     $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$tmp_value);
                 }
                 next;
             }
             foreach my $child (@{$parentmap->{'child'}}) {
-                my $tmp_value = eval(pp($value));
+                my $tmp_value = eval(Dumper($value));
                 my $child_path = [ $child->{'name'}, [[$child->{'position'}, undef]] ];
                 $numAffected += $mod->([$parentmap->{'root'}],$action,$child_path,$child->{'target'},$tmp_value);
             }

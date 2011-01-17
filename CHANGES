@@ -1,5 +1,19 @@
 Revision history for XML-TreePP-Editor
 
+0.11    2011-01-17 reg
+        - Replaced the use of the Data::Dump module with Data::Dumper.
+          In the latest version of PERL (5.12.2 tested) the eval function does
+          not like unquoted HASH keys which begin with the dash "-". Thus, the
+          test cases broke with this version of PERL. Data::Dump does not quote
+          the hash key, so its use was replaced with Data::Dumper which does
+          quote the hash key. It is used to clone XML structures.
+          The XML::TreePP module uses the dash "-" as default (configurable to
+          optionally use "@" instead of "-") to indicate attributes of XML
+          elements. So the XML string "<element attribute="value"/>" is
+          represented in PERL structure as
+                 "{ element => { -attribute => 'value' } }" with Data::Dump
+          and as "{ element => { '-attribute' => 'value' } }" with Data::Dumper
+
 0.11    2009-11-04 reg
         - Added test cases to test all primary functions
         - Fixed an issue with modify-delete action when deleting multiple

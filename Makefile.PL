@@ -15,7 +15,7 @@ WriteMakefile(
     PREREQ_PM           => {
                              'XML::TreePP' => 0.39,
                              'XML::TreePP::XMLPath' => 0.61,
-                             'Data::Dump'  => 1.10,
+                             'Data::Dumper' => 2.125,
                              'Test::More' => 0,
                            },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

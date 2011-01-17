@@ -9,13 +9,18 @@ use Test::More tests => 15;
 BEGIN { use_ok('XML::TreePP'); 
         use_ok('XML::TreePP::XMLPath');
         use_ok('XML::TreePP::Editor');
-        use_ok('Data::Dump', 'pp');
+        #use_ok('Data::Dump', 'pp');
+        use_ok('Data::Dumper');
       };
 
 #########################
 
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
+
+$Data::Dumper::Indent = 0;
+$Data::Dumper::Purity = 1;
+$Data::Dumper::Terse = 1;
 
 my $tpp = XML::TreePP->new();
 my $tppx = XML::TreePP::XMLPath->new();
@@ -46,48 +51,48 @@ my ($path, $result, $newnode, $newtree);
 
 ## Test inserting new node into XML Document
 $newnode    = { -id => "four", data => "test data four - insert" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = "/test/node";
 $result     = $tppe->modify($newtree, $path, insert => $newnode);
 ok ( $result == 1 && $newtree->{'test'}->{'node'}->[0]->{'data'} eq "test data four - insert", "modify( insert )" ) || diag explain $newtree;
 
 # Test replacing a node
 $newnode    = { -id => "four", data => "test data four - replace" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[3]';
 $result     = $tppe->modify($newtree, $path, replace => $newnode);
 ok ( $result == 1 && $newtree->{'test'}->{'node'}->[2]->{'data'} eq "test data four - replace", "modify( replace ) single" ) || diag explain $newtree;
 
 # Test replacing all child nodes
 $newnode    = { -id => "four", data => "test data four - replace" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node';
 $result     = $tppe->modify($newtree, $path, replace => $newnode);
 ok ( $result == 3 && $newtree->{'test'}->{'node'}->[2]->{'data'} eq "test data four - replace", "modify( replace ) all" ) || diag explain $newtree;
 
 # Test deleting a single node
 $newnode    = { -id => "four", data => "test data four - delete" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[1]';
 $result     = $tppe->modify($newtree, $path, delete => undef);
 ok ( $result == 1 && $newtree->{'test'}->{'node'}->[0]->{'data'} eq "test data two", "modify( delete ) single" ) || diag explain $newtree;
 
 # Test deleting all child nodes
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node';
 $result     = $tppe->modify($newtree, $path, delete => undef);
 ok ( $result == 3, "modify( delete ) all" ) || diag explain $newtree;
 
 # Test mergeadd on a node
 $newnode    = { -id => "four", dataadd => "test data four - mergeadd" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[@id="three"]';
 $result     = $tppe->modify($newtree, $path, mergeadd => $newnode);
 ok ( $result == 1 && $newtree->{'test'}->{'node'}->[2]->{'dataadd'} eq "test data four - mergeadd", "modify( mergeadd )" ) || diag explain $newtree;
 
 # Test mergeappend on a node
 $newnode    = { -id => "four", data => " - mergeappend" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[@id="two"]';
 $result     = $tppe->modify($newtree, $path, mergeappend => $newnode);
 ok ( $result == 2 
@@ -98,7 +103,7 @@ TODO: {
 local $TODO = "Cannot mergeappend on complex nodes yet.";
 # Test mergeappend on a node's special text element
 $newnode    = { data => " - mergeappend" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[@id="three"]';
 $result     = $tppe->modify($newtree, $path, mergeappend => $newnode);
 ok ( $result == 1 && $newtree->{'test'}->{'node'}->[2]->{'data'}->{'#text'} eq "<html><body>test data three</body></html> - mergeappend", "modify( mergeappend ) special text element" ); # || diag explain $newtree;
@@ -106,7 +111,7 @@ ok ( $result == 1 && $newtree->{'test'}->{'node'}->[2]->{'data'}->{'#text'} eq "
 
 # Test mergereplace on a node
 $newnode    = { -id2 => "four", data => "test data four - mergereplace" };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[@id="one"]';
 $result     = $tppe->modify($newtree, $path, mergereplace => $newnode);
 ok ( $result == 2 
@@ -115,7 +120,7 @@ ok ( $result == 2
 
 # Test mergedelete on a node
 $newnode    = { data => undef };
-$newtree    = eval( pp($tree) );
+$newtree    = eval( Dumper($tree) );
 $path       = '/test/node[@id="three"]';
 $result     = $tppe->modify($newtree, $path, mergedelete => $newnode);
 ok ( $result == 1
