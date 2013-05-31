@@ -20,7 +20,7 @@ To use stand-alone:
 
 =head1 DESCRIPTION
 
-This module is used for editing a XML::TreePP parsed XML Document.
+This module is used for editing a C<XML::TreePP> parsed XML Document.
 
 =head1 REQUIREMENTS
 
@@ -36,7 +36,7 @@ The following perl modules are depended on by this module:
 
 =head1 Editor PHILOSOPHY
 
-=head2 XML Note and Attribute Identification
+=head2 XML Node and Attribute Identification
 
 The identification of XML document nodes for modification is handled by the
 C<XML::TreePP::XMLPath> module.
@@ -53,7 +53,7 @@ information.
 =head2 C<XML::TreePP::XMLPath> dependency on C<XML::TreePP>
 
 The C<XML::TreePP::XMLPath> module has a dependence on C<XML::TreePP>
-When C<XML::TreePP::Editor->tpp()> and C<XML::TreePP::Editor->tppx()> methods
+When C<XML::TreePP::Editor::tpp()> and C<XML::TreePP::Editor::tppx()> methods
 are called without parameters, this module checks to see if either of these
 objects have been previously created, and links them together.
 
@@ -66,8 +66,8 @@ it yourself in the following fashion.
     $tppx->tpp($tpp);
     my $tppe = new XML::TreePP::Editor( tpp => $tpp, tppx => $tppx );
 
-This is essentially similar to how the C<XML::TreePP::Editor->tpp()> and
-C<XML::TreePP::Editor->tppx()> methods associate the objects.
+This is essentially similar to how the C<XML::TreePP::Editor::tpp()> and
+C<XML::TreePP::Editor::tppx()> methods associate the objects.
 
 =head1 METHODS
 
@@ -103,32 +103,32 @@ BEGIN {
 
 =head2 tpp
 
-This module is an extension of the XML::TreePP module. As such, it uses the
+This module is an extension of the C<XML::TreePP module>. As such, it uses the
 module in many different methods to parse XML Docuements, and when the user
 calls the C<set()> and C<get()> methods to set and get properties specific to
 the module.
 
-The XML::TreePP module, is loaded upon requesting a new object.
+The C<XML::TreePP module>, is loaded upon requesting a new object.
 
-The caller can override the loaded instance of XML::TreePP in favor of
+The caller can override the loaded instance of C<XML::TreePP> in favor of
 another instance the caller posses, by providing it to this method.
 
-Additionally, this module's loaded instance of XML::TreePP can be directly
+Additionally, this module's loaded instance of C<XML::TreePP> can be directly
 accessed or retrieved through this method.
 
 =over 4
 
 =item * C<XML::TreePP>
 
-An instance of XML::TreePP that this object should use instead of, when needed,
+An instance of C<XML::TreePP> that this object should use instead of, when needed,
 loading its own copy. If not provided, the currently loaded instance is
 returned. If an instance is not loaded, an instance is loaded and then returned.
 
 =item * I<returns>
 
-Returns the result of setting an instance of XML::TreePP in this object.
-Or returns the internally loaded instance of XML::TreePP.
-Or loads a new instance of XML::TreePP and returns it.
+Returns the result of setting an instance of C<XML::TreePP> in this object.
+Or returns the internally loaded instance of C<XML::TreePP>.
+Or loads a new instance of C<XML::TreePP> and returns it.
 
 =back
 
@@ -160,33 +160,33 @@ sub tpp(@) {
 
 =head2 tppx
 
-This module is an extension of the XML::TreePP::XMLPath module. As such,
-it uses the module in many different methods to access XML::TreePP parsed XML
+This module is an extension of the C<XML::TreePP::XMLPath> module. As such,
+it uses the module in many different methods to access C<XML::TreePP> parsed XML
 Documents, and when the user calls the C<set()> and C<get()> methods to set
 and get properties specific to the module.
 
-The XML::TreePP::XMLPath module, is loaded upon requesting a new object.
+The C<XML::TreePP::XMLPath> module, is loaded upon requesting a new object.
 
-The caller can override the loaded instance of XML::TreePP::XMLPath in favor of
+The caller can override the loaded instance of C<XML::TreePP::XMLPath> in favor of
 another instance the caller posses, by proving it to this method.
 
-Additionally, this module's loaded instance of XML::TreePP::XMLPath can be
+Additionally, this module's loaded instance of C<XML::TreePP::XMLPath> can be
 directly accessed or retrieved through this method.
 
 =over 4
 
 =item * C<XML::TreePP::XMLPath>
 
-An instance of XML::TreePP::XMLPath that this object should use instead of,
+An instance of C<XML::TreePP::XMLPath> that this object should use instead of,
 when needed, loading its own copy. If not provided, the currently loaded
 instance is returned. If an instance is not already loaded, a new instance is
 loaded and then returned.
 
 =item * I<returns>
 
-Returns the result of setting an instance of XML::TreePP::XMLPath in this object.
-Or returns the internally loaded instance of XML::TreePP::XMLPath.
-Or loads a new instance of XML::TreePP::XMLPath and returns it.
+Returns the result of setting an instance of C<XML::TreePP::XMLPath> in this object.
+Or returns the internally loaded instance of C<XML::TreePP::XMLPath>.
+Or loads a new instance of C<XML::TreePP::XMLPath> and returns it.
 
 =back
 
@@ -300,13 +300,13 @@ Create a new object instances of this module.
 
 =item * B<tpp>
 
-An instance of XML::TreePP to be used instead of letting this module load its
-own.
+An instance of C<XML::TreePP> to be used instead of letting this module load
+its own.
 
 =item * B<tppx>
 
-An instance of XML::TreePP::XMLPath to be used instead of letting this module
-load its own.
+An instance of C<XML::TreePP::XMLPath> to be used instead of letting this
+module load its own.
 
 =item * B<debug>
 
