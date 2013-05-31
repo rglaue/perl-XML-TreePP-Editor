@@ -34,6 +34,41 @@ The following perl modules are depended on by this module:
 
 =back
 
+=head1 Editor PHILOSOPHY
+
+=head2 XML Note and Attribute Identification
+
+The identification of XML document nodes for modification is handled by the
+C<XML::TreePP::XMLPath> module.
+
+The idenfication of attributes in XML nodes is via the C<attr_prefix> property
+in the C<XML::TreePP> module.
+
+The idenfication of XML text (or CDATA) nodes is via the C<text_node_key>
+property in the C<XML::TreePP> module.
+
+Please review the XMLPath PHILOSOPHY section in it's POD for further
+information.
+
+=head2 C<XML::TreePP::XMLPath> dependency on C<XML::TreePP>
+
+The C<XML::TreePP::XMLPath> module has a dependence on C<XML::TreePP>
+When C<XML::TreePP::Editor->tpp()> and C<XML::TreePP::Editor->tppx()> methods
+are called without parameters, this module checks to see if either of these
+objects have been previously created, and links them together.
+
+If you provide your own C<XML::TreePP> or C<XML::TreePP::XMLPath> objects, this
+module does not attempt to link them together. Instead you would want to do
+it yourself in the following fashion.
+
+    my $tpp = new XML::TreePP;
+    my $tppx = new XML::TreePP::XMLPath;
+    $tppx->tpp($tpp);
+    my $tppe = new XML::TreePP::Editor( tpp => $tpp, tppx => $tppx );
+
+This is essentially similar to how the C<XML::TreePP::Editor->tpp()> and
+C<XML::TreePP::Editor->tppx()> methods associate the objects.
+
 =head1 METHODS
 
 =cut
@@ -46,11 +81,7 @@ use strict;
 use Carp;
 use XML::TreePP;
 use XML::TreePP::XMLPath 0.61;
-#use Data::Dump qw(pp);
 use Data::Dumper;
-$Data::Dumper::Indent = 0;
-$Data::Dumper::Purity = 1;
-$Data::Dumper::Terse = 1;
 
 BEGIN {
     use vars      qw(@ISA @EXPORT @EXPORT_OK);
@@ -61,11 +92,10 @@ BEGIN {
     use vars      qw($REF_NAME);
     $REF_NAME   = "XML::TreePP::Editor";  # package name
 
-    use vars      qw( $VERSION $DEBUG %PROPERTIES );
-    $VERSION    = '0.12';
+    use vars      qw( $VERSION $DEBUG $TPPKEYS );
+    $VERSION    = '0.13';
     $DEBUG      = 0;
-    $PROPERTIES{'TPP'}  = "force_array force_hash cdata_scalar_ref user_agent http_lite lwp_useragent base_class elem_class xml_deref first_out last_out indent xml_decl output_encoding utf8_flag attr_prefix text_node_key ignore_error use_ixhash";
-    $PROPERTIES{'TPPX'} = "";
+    $TPPKEYS    = "force_array force_hash cdata_scalar_ref user_agent http_lite lwp_useragent base_class elem_class xml_deref first_out last_out indent xml_decl output_encoding utf8_flag attr_prefix text_node_key ignore_error use_ixhash";
 }
 
 
@@ -81,7 +111,7 @@ the module.
 The XML::TreePP module, is loaded upon requesting a new object.
 
 The caller can override the loaded instance of XML::TreePP in favor of
-another instance the caller posses, by proving it to this method.
+another instance the caller posses, by providing it to this method.
 
 Additionally, this module's loaded instance of XML::TreePP can be directly
 accessed or retrieved through this method.
@@ -112,8 +142,14 @@ sub tpp(@) {
     if (!defined $self) {
         return new XML::TreePP;
     } else {
+        # If being given the object, set it and return result
         return $self->{'tpp'} = shift if @_ >= 1 && ref($_[0]) eq "XML::TreePP";
-        return $self->{'tpp'} if defined $self->{'tpp'} && ref($self->{'tpp'}) eq "XML::TreePP";
+        # If wanting object, and XMLPath object exists, retrieve it, set it, and return it
+        if ((defined $self->{'tppx'}) && (ref($self->{'tppx'}) eq "XML::TreePP::XMLPath")) {
+            $self->{'tpp'} = $self->{'tppx'}->tpp();
+            return $self->{'tpp'};
+        }
+        # If wanting object and XMLPath object does not exist, create it and return it
         $self->{'tpp'} = new XML::TreePP;
         return $self->{'tpp'};
     }
@@ -164,9 +200,16 @@ sub tppx(@) {
     if (!defined $self) {
         return new XML::TreePP::XMLPath;
     } else {
+        # If being given the object, set it and return result
         return $self->{'tppx'} = shift if @_ >= 1 && ref($_[0]) eq "XML::TreePP::XMLPath";
-        return $self->{'tppx'} if defined $self->{'tppx'} && ref($self->{'tppx'}) eq "XML::TreePP::XMLPath";
+        # If wanting object, and XML::TreePP object exists, create it, associate it, and return it
+        # Create
         $self->{'tppx'} = new XML::TreePP::XMLPath;
+        # Associate
+        if ((defined $self->{'tpp'}) && (ref($self->{'tpp'}) eq "XML::TreePP")) {
+            $self->{'tppx'}->tpp( $self->{'tpp'} );
+        }
+        # Return
         return $self->{'tppx'};
     }
 }
@@ -197,14 +240,13 @@ deleting the property.
 
 =back
 
-    $tppe->set( 'attr_prefix' );  # deletes the property attr_prefix
-    $tppe->set( 'attr_prefix' => '-' );       # sets the value of attr_prefix
-    $tppe->set( 'text_node_key' => '#text' ); # sets the value of text_node_key
+    $tppe->set( 'property_name' );            # deletes the property property_name
+    $tppe->set( 'property_name' => 'val' );   # sets the value of property_name
 
 =cut
 
 sub set(@) {
-    my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
+    my $self    = shift if ref($_[0]) eq $REF_NAME || return undef;
     my %args    = @_;
     while (my ($key,$val) = each %args) {
         if ( defined $val ) {
@@ -236,23 +278,15 @@ Returns the value of the property requested
 
 =back
 
-    $tppe->get( 'attr_prefix' );
+    $tppe->get( 'property_name' );
 
 =cut
 
 sub get(@) {
-    my $self    = shift if ref($_[0]) eq $REF_NAME || undef;
+    my $self    = shift if ref($_[0]) eq $REF_NAME || return undef;
     my $key     = shift;
-    if (($key =~ /$PROPERTIES{'TPP'}/) && (defined $self)) {
-        # get it from XML::TreePP
-        $self->tpp->get( $key );
-    } elsif (($key =~ /$PROPERTIES{'TPPX'}/) && (defined $self)) {
-        # define it in XML::TreePP::XMLPath
-        $self->tppx->get( $key );
-    } else {
-        return $self->{$key} if exists $self->{$key};
-        return undef;
-    }
+    return $self->{$key} if exists $self->{$key};
+    return undef;
 }
 
 
@@ -387,6 +421,10 @@ appending the values of text elements
 
 =back
 
+B<note:> This method uses the values retrieved from
+$self->tpp()->get('attr_prefix') and $self->tpp()->get('text_node_key') to
+define how to interpret how to identify attributes and text (CDATA) nodes.
+
 =back
 
 Example:
@@ -410,6 +448,10 @@ sub modify (@) {
     my $xmlpath = shift; # XML::TreePP::XMLPath
     my %options = @_;    # replace=>\%val; insert=>\%val; etc.
     my $numAffected = 0;
+
+    local $Data::Dumper::Indent = 0;
+    local $Data::Dumper::Purity = 1;
+    local $Data::Dumper::Terse = 1;
 
     my ($tpp,$tppx,$xml_text_id,$xml_attr_id);
 
@@ -1357,7 +1399,9 @@ XML::TreePP::Editor on Codepin: http://www.codepin.org/project/perlmod/XML-TreeP
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (c) 2009-2011 Russell E Glaue, Center for the Application of Information Technologies.
+Copyright (c) 2009-2013 Russell E Glaue,
+Center for the Application of Information Technologies,
+Western Illinois University.
 All rights reserved.
 
 This program is free software; you can redistribute it and/or modify it under
